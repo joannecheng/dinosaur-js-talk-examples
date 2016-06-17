@@ -9,17 +9,37 @@ const d3Scale = require('d3-scale');
 function draw(tornadoData) {
   const yAxisCount = tornadoData.length;
   const xAxisCount = tornadoData[0].countByDays.length;
+  const material = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide, vertexColors: THREE.VertexColors });
 
-  const geometry = new THREE.PlaneGeometry(20, 20, xAxisCount-1, yAxisCount-1);
 
-  for(let i=0; i<yAxisCount; i++) {
-    const currentRow = tornadoData[i];
-    for(let j=0; j<xAxisCount; j++) {
-      // set height based on number of tornadoes that day
-      geometry.vertices[i*j].z = (currentRow.countByDays[j]) / 5;
-    }
-  }
+  // ******** MAIN GRAPH CODE ********
+  // define scales
+  const allCounts = _.flatten(_.pluck(tornadoData, 'countByDays'))
+  const maxCount = _.max(allCounts);
+  const heightScale = d3Scale.scaleLinear()
+    .domain([0, maxCount]) // TODO: this calculation should be part of TornadoDataHandler
+    .range([0.5, 8])
 
+  const colorScale = d3Scale.scaleLinear()
+    .domain([0, maxCount]) // TODO: this calculation should be part of TornadoDataHandler
+    .range(['#eef4f8', '#243d52'])
+
+  // create shape for 3D graph
+  const graphGeometry = new THREE.PlaneGeometry(50, 20, xAxisCount-1, yAxisCount-1);
+  const faceColors = [];
+
+  _.each(graphGeometry.vertices, function(vertex, i) {
+    faceColors.push(colorScale(allCounts[i]));
+    vertex.z = heightScale(allCounts[i]);
+  })
+
+  _.each(graphGeometry.faces, function(face) {
+    face.vertexColors[0] = new THREE.Color(faceColors[face.a]);
+    face.vertexColors[1] = new THREE.Color(faceColors[face.b]);
+    face.vertexColors[2] = new THREE.Color(faceColors[face.c]);
+  });
+
+  // ********** THREEJS SETUP/RENDERING **********
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 50);
 
@@ -30,9 +50,7 @@ function draw(tornadoData) {
 
   const pointLight = new THREE.PointLight(0xFFFFFF, 1, 100);
   pointLight.position.set(-15, 20, 20);
-  const material = new THREE.MeshPhongMaterial( { color: 0x156286, emissive: 0x072534,
-    side: THREE.DoubleSide });
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(graphGeometry, material);
 
   scene.add(mesh);
   scene.add(pointLight);
@@ -54,8 +72,8 @@ function parseData() {
     });
 
     const tgroups = new TornadoGroups(tornadoArray);
-
-    draw(tgroups.groupByMonth(5));
+    console.log(tgroups.groupByMonthSummed(5));
+    draw(tgroups.groupByMonthSummed(5));
   });
 }
 

@@ -6,7 +6,7 @@ const moment = require('moment');
 // Input: Parsed CSV array from `tornadoes_minified.csv`
 // See `clean_csv.rb` for columns labels
 
-class TornadoGroups {
+class TornadoDataHandler {
   constructor(data) {
     this.data = this._cleanData(data);
   }
@@ -42,10 +42,17 @@ class TornadoGroups {
 
   groupByMonthSummed(month) {
     const groupedByMonth = this.groupByMonth(month);
-    const sumOfPreviousDays = _.map(groupedByMonth.countByDays, function(row, i) {
-      /// lkdsfjlksajflksjdflkjs
-    });
+    const groupByMonthSummed = {};
 
+    return _.map(groupedByMonth, function(item) {
+      const sumOfPreviousDays = _.map(item.countByDays, function(row, i) {
+        return _.reduce(item.countByDays.slice(0, i), function(memo, num) {
+          return memo + num;
+        }, 0)
+      });
+
+      return { year: item.year, countByDays: sumOfPreviousDays }
+    });
   }
 
   _allYears() {
@@ -78,4 +85,4 @@ class TornadoGroups {
   }
 }
 
-module.exports = TornadoGroups
+module.exports = TornadoDataHandler
