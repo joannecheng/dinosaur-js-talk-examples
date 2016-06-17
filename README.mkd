@@ -1,5 +1,6 @@
 # Dinosaur JS talk examples!
 
+![](https://internetactionforce.files.wordpress.com/2016/02/t-rex-ballet.gif)
 
 To start:
 
