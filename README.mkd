@@ -1,0 +1,8 @@
+# Dinosaur JS talk examples!
+
+
+To start:
+
+```js
+npm run start
+```

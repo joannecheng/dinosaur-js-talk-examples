@@ -1,0 +1,19 @@
+{
+  "name": "dinosaur-js-talk-examples",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "budo ./js/app.js:js/bundle.js --live"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "budo": "^8.3.0",
+    "d3": "^4.0.0-alpha.49",
+    "moment": "^2.13.0",
+    "rx-lite": "^4.0.8",
+    "underscore": "^1.8.3"
+  }
+}
