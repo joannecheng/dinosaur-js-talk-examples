@@ -9,6 +9,15 @@ const moment = require('moment');
 class TornadoDataHandler {
   constructor(data) {
     this.data = this._cleanData(data);
+
+    this.headerIndexes = {
+      year: this.data.header.indexOf("yr"),
+      day: this.data.header.indexOf("dy"),
+      month: this.data.header.indexOf("mo"),
+      f: this.data.header.indexOf("f"),
+      time: this.data.header.indexOf('time'),
+      state: this.data.header.indexOf('st')
+    }
   }
 
   headers() {
@@ -16,28 +25,51 @@ class TornadoDataHandler {
   }
 
   groupByMonth(month) {
-    const monthIndex = this.data.header.indexOf("mo");
-    const dayIndex = this.data.header.indexOf("dy");
-    const yearIndex = this.data.header.indexOf("yr");
-
-    const dataFilteredByMonth = this.data.rows.filter(function(row) {
-      return row[monthIndex] === month;
+    const dataFilteredByMonth = this.data.rows.filter((row) => {
+      return row[this.headerIndexes.month] === month;
     });
 
-    return this._allYears().map(function(year) {
+    return this._allYears().map((year) => {
       const countByDays = new Array(moment((year, month), "YYYY M").daysInMonth());
       countByDays.fill(0);
-      const byMonthAndYear = _.filter(dataFilteredByMonth, function(item) {
-        return item[yearIndex] === year;
+      const byMonthAndYear = _.filter(dataFilteredByMonth, (item) => {
+        return item[this.headerIndexes.year] === year && item[this.headerIndexes.f] > 0;
       });
 
-      _.each(byMonthAndYear, function(item, i) { 
-        const day = item[dayIndex] - 1; // 0 indexed
+      _.each(byMonthAndYear, (item, i) => {
+        const day = item[this.headerIndexes.day] - 1; // 0 indexed
         countByDays[day] = countByDays[day]+1 || 0
       })
 
-      return { year: year, countByDays: countByDays }
+      return { year: year, counts: countByDays }
     });
+  }
+
+  groupByHourInState(stateInput) {
+    const rows = this.data.rows;
+    const month = 9;
+    const daysInMonth = moment(("1999", month), "YYYY M").daysInMonth();
+
+    const dataFilteredByMonthAndState = this.data.rows.filter((row) => {
+      const state = row[this.headerIndexes.state] || "";
+      return row[this.headerIndexes.month] === month;
+    });
+
+    const filteredResults = _.map(_.range(daysInMonth), (day) => {
+      const countsForDay = _.map(_.range(24), (hour) => {
+        const matching = _.filter(dataFilteredByMonthAndState, (row) => {
+          const time = row[this.headerIndexes.time] || "";
+          const dayFromData = row[this.headerIndexes.day];
+
+          return parseInt(time.slice(0,2)) === hour && day === dayFromData;
+        });
+        return matching.length;
+      });
+
+      return { day: day, counts: countsForDay}
+    });
+
+    return filteredResults
   }
 
   groupByMonthSummed(month) {
@@ -45,20 +77,19 @@ class TornadoDataHandler {
     const groupByMonthSummed = {};
 
     return _.map(groupedByMonth, function(item) {
-      const sumOfPreviousDays = _.map(item.countByDays, function(row, i) {
-        return _.reduce(item.countByDays.slice(0, i), function(memo, num) {
+      const sumOfPreviousDays = _.map(item.counts, function(row, i) {
+        return _.reduce(item.counts.slice(0, i), function(memo, num) {
           return memo + num;
         }, 0)
       });
 
-      return { year: item.year, countByDays: sumOfPreviousDays }
+      return { year: item.year, counts: sumOfPreviousDays }
     });
   }
 
   _allYears() {
-    const yearIndex = this.data.header.indexOf("yr");
-    return _.reject(_.unique(this.data.rows.map(function(row) {
-      return row[yearIndex] }
+    return _.reject(_.unique(this.data.rows.map((row) => {
+      return row[this.headerIndexes.year] }
     )), function(row) { return _.isNaN(row) })
   }
 
