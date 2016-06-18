@@ -47,12 +47,12 @@ class TornadoDataHandler {
 
   groupByHourInState(stateInput) {
     const rows = this.data.rows;
-    const month = 9;
+    const month = 11;
     const daysInMonth = moment(("1999", month), "YYYY M").daysInMonth();
 
     const dataFilteredByMonthAndState = this.data.rows.filter((row) => {
       const state = row[this.headerIndexes.state] || "";
-      return row[this.headerIndexes.month] === month;
+      return stateInput == state;
     });
 
     const filteredResults = _.map(_.range(daysInMonth), (day) => {

@@ -8,24 +8,59 @@ const TornadoGroups = require('./tornado_data_handler');
 const d3Color = require('d3-color');
 const d3Scale = require('d3-scale');
 
+
 function draw(tornadoData) {
   const yAxisCount = tornadoData.length;
   const xAxisCount = tornadoData[0].counts.length;
   const graphWidth = 500;
   const graphHeight = 800;
+  const maxDepth = 300;
 
   // ******** CREATE GRID LINES ******
-  const gridMaterial = new THREE.LineBasicMaterial({ color: '#000' });
+  const gridMaterial = new THREE.LineBasicMaterial({ color: 0x888888 });
 
   // container for grid
   const gridObject = new THREE.Object3D();
-  const gridGeometry = new THREE.Geometry();
 
-  for (let i=0; i < graphWidth; i+=10) {
-    gridGeometry.vertices.push(new THREE.Vector3(0, i, 0));
+  // Grid geometry
+  const bottomGridGeometry = new THREE.Geometry();
+  const heightGridGeometry = new THREE.Geometry();
+  const depthGridGeometry = new THREE.Geometry();
+
+  for (let i=-graphHeight/2; i < graphHeight/2; i+=20) {
+    bottomGridGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, i, 0));
+    bottomGridGeometry.vertices.push(new THREE.Vector3(graphWidth/2, i, 0));
+
+    heightGridGeometry.vertices.push(new THREE.Vector3(0, i, 0));
+    heightGridGeometry.vertices.push(new THREE.Vector3(0, i, maxDepth));
   }
-  const line = new THREE.Line( gridGeometry, gridGeometry, THREE.LinePieces );
 
+  for (let i=-graphWidth/2; i < graphWidth/2; i+=20) {
+    bottomGridGeometry.vertices.push(new THREE.Vector3(i, -graphHeight/2, 0));
+    bottomGridGeometry.vertices.push(new THREE.Vector3(i, graphHeight/2, 0));
+
+    depthGridGeometry.vertices.push(new THREE.Vector3(i, 0, maxDepth));
+    depthGridGeometry.vertices.push(new THREE.Vector3(i, 0, 0));
+  }
+
+  for (let i=0;i<maxDepth;i+=20) {
+    heightGridGeometry.vertices.push(new THREE.Vector3(0, -graphHeight/2, i));
+    heightGridGeometry.vertices.push(new THREE.Vector3(0, graphHeight/2, i));
+
+    depthGridGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, 0, i));
+    depthGridGeometry.vertices.push(new THREE.Vector3(graphWidth/2, 0, i));
+  }
+
+  const bottomGrid = new THREE.LineSegments(bottomGridGeometry, gridMaterial);
+  const heightGrid = new THREE.LineSegments(heightGridGeometry, gridMaterial);
+  const depthGrid = new THREE.LineSegments(depthGridGeometry, gridMaterial);
+  heightGrid.translateX(-graphWidth/2);
+  depthGrid.translateY(graphHeight/2);
+
+  // Add grid lines
+  gridObject.add(bottomGrid);
+  gridObject.add(heightGrid);
+  gridObject.add(depthGrid);
 
   // ******** CREATE GRAPH GEOMETRY ********
   // define scales
@@ -34,10 +69,10 @@ function draw(tornadoData) {
   const maxCount = _.max(allCounts);
   const heightScale = d3Scale.scaleLinear()
     .domain([0, maxCount])
-    .range([0, 200])
+    .range([0, maxDepth - 10]) // add some padding
 
   const colorScale = d3Scale.scaleLinear()
-    .domain([0, maxCount])
+    .domain([0, maxCount/2])
     .range(['rgb(198, 219, 239)', 'rgb(49, 130, 189)'])
 
   // create shape for 3D graph
@@ -60,7 +95,7 @@ function draw(tornadoData) {
 
   // ********** THREEJS SETUP/RENDERING **********
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(35, window.innerWidth/window.innerHeight, 1, 4000);
+  window.camera = new THREE.PerspectiveCamera(30, window.innerWidth/window.innerHeight, 1, 4000);
   controls = new OrbitControls(camera);
 
   const renderer = new THREE.WebGLRenderer();
@@ -69,8 +104,9 @@ function draw(tornadoData) {
   document.body.appendChild(renderer.domElement);
 
   scene.add(graphMesh);
-  scene.add(line);
-  camera.position.z = graphHeight * 2;
+  scene.add(gridObject);
+
+  camera.position.z = graphHeight * 3;
 
   const render = function() {
     requestAnimationFrame(render);
@@ -87,7 +123,7 @@ function parseData() {
     });
 
     const tgroups = new TornadoGroups(tornadoArray);
-    draw(tgroups.groupByHourInState("OK"));
+    draw(tgroups.groupByHourInState("TX"));
   });
 }
 
