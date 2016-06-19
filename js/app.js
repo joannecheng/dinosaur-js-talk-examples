@@ -1,5 +1,9 @@
+// TODO: Labels
+// TODO: buttons with specific "views"
+// TODO: Lines for each 'row' of data
+// TODO: "Average" line
+
 const _ = require('underscore');
-const Rx = require('rx-lite');
 const OrbitControls = require('three-orbit-controls')(THREE)
 
 const TornadoGroups = require('./tornado_data_handler');
@@ -8,6 +12,9 @@ const TornadoGroups = require('./tornado_data_handler');
 const d3Color = require('d3-color');
 const d3Scale = require('d3-scale');
 
+// https://stemkoski.github.io/Three.js/Sprite-Text-Labels.html
+function createTextSprite(text) {
+}
 
 function draw(tornadoData) {
   const yAxisCount = tornadoData.length;
@@ -17,15 +24,29 @@ function draw(tornadoData) {
   const maxDepth = 300;
 
   // ******** CREATE GRID LINES ******
-  const gridMaterial = new THREE.LineBasicMaterial({ color: 0x888888 });
+  const gridMaterial = new THREE.LineBasicMaterial({ color: 0xeeeeee });
+  const axisMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
 
-  // container for grid
+  // container for grid - this is what we pass to the scene
   const gridObject = new THREE.Object3D();
 
   // Grid geometry
   const bottomGridGeometry = new THREE.Geometry();
   const heightGridGeometry = new THREE.Geometry();
   const depthGridGeometry = new THREE.Geometry();
+
+  const xAxisGeometry = new THREE.Geometry();
+  const yAxisGeometry = new THREE.Geometry();
+  const zAxisGeometry = new THREE.Geometry();
+
+  xAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, graphHeight/2, 0));
+  xAxisGeometry.vertices.push(new THREE.Vector3(graphWidth/2, graphHeight/2, 0));
+
+  yAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, -graphHeight/2, 0));
+  yAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, graphHeight/2, 0));
+
+  zAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, graphHeight/2, 0));
+  zAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, graphHeight/2, maxDepth));
 
   for (let i=-graphHeight/2; i < graphHeight/2; i+=20) {
     bottomGridGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, i, 0));
@@ -54,10 +75,19 @@ function draw(tornadoData) {
   const bottomGrid = new THREE.LineSegments(bottomGridGeometry, gridMaterial);
   const heightGrid = new THREE.LineSegments(heightGridGeometry, gridMaterial);
   const depthGrid = new THREE.LineSegments(depthGridGeometry, gridMaterial);
+  
+  const xAxis = new THREE.LineSegments(xAxisGeometry, axisMaterial);
+  const yAxis = new THREE.LineSegments(yAxisGeometry, axisMaterial);
+  const zAxis = new THREE.LineSegments(zAxisGeometry, axisMaterial);
+
   heightGrid.translateX(-graphWidth/2);
   depthGrid.translateY(graphHeight/2);
 
   // Add grid lines
+  gridObject.add(xAxis);
+  gridObject.add(yAxis);
+  gridObject.add(zAxis);
+
   gridObject.add(bottomGrid);
   gridObject.add(heightGrid);
   gridObject.add(depthGrid);
@@ -93,9 +123,12 @@ function draw(tornadoData) {
   // This is what we pass into the scene
   const graphMesh = new THREE.Mesh(graphGeometry, graphMaterial);
 
+  // ********* CREATE GRAPH LINES *********
+  _.each
+
   // ********** THREEJS SETUP/RENDERING **********
   const scene = new THREE.Scene();
-  window.camera = new THREE.PerspectiveCamera(30, window.innerWidth/window.innerHeight, 1, 4000);
+  window.camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 1, 4000);
   controls = new OrbitControls(camera);
 
   const renderer = new THREE.WebGLRenderer();
@@ -106,7 +139,7 @@ function draw(tornadoData) {
   scene.add(graphMesh);
   scene.add(gridObject);
 
-  camera.position.z = graphHeight * 3;
+  camera.position.z = graphHeight*2;
 
   const render = function() {
     requestAnimationFrame(render);
