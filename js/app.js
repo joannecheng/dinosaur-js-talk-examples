@@ -3,141 +3,37 @@
 // TODO: Lines for each 'row' of data
 // TODO: "Average" line
 
-const _ = require('underscore');
 const OrbitControls = require('three-orbit-controls')(THREE)
 
 const TornadoGroups = require('./tornado_data_handler');
-
-// d3 requirements
-const d3Color = require('d3-color');
-const d3Scale = require('d3-scale');
-
-// https://stemkoski.github.io/Three.js/Sprite-Text-Labels.html
-function createTextSprite(text) {
-}
+const setupGrid = require('./setup_grid');
+const setupGraph = require('./setup_graph');
+const setupGraphSimple = require('./setup_graph_simple');
 
 function draw(tornadoData) {
-  const yAxisCount = tornadoData.length;
-  const xAxisCount = tornadoData[0].counts.length;
   const graphWidth = 500;
   const graphHeight = 800;
   const maxDepth = 300;
 
-  // ******** CREATE GRID LINES ******
-  const gridMaterial = new THREE.LineBasicMaterial({ color: 0xeeeeee });
-  const axisMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-
-  // container for grid - this is what we pass to the scene
-  const gridObject = new THREE.Object3D();
-
-  // Grid geometry
-  const bottomGridGeometry = new THREE.Geometry();
-  const heightGridGeometry = new THREE.Geometry();
-  const depthGridGeometry = new THREE.Geometry();
-
-  const xAxisGeometry = new THREE.Geometry();
-  const yAxisGeometry = new THREE.Geometry();
-  const zAxisGeometry = new THREE.Geometry();
-
-  xAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, graphHeight/2, 0));
-  xAxisGeometry.vertices.push(new THREE.Vector3(graphWidth/2, graphHeight/2, 0));
-
-  yAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, -graphHeight/2, 0));
-  yAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, graphHeight/2, 0));
-
-  zAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, graphHeight/2, 0));
-  zAxisGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, graphHeight/2, maxDepth));
-
-  for (let i=-graphHeight/2; i < graphHeight/2; i+=20) {
-    bottomGridGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, i, 0));
-    bottomGridGeometry.vertices.push(new THREE.Vector3(graphWidth/2, i, 0));
-
-    heightGridGeometry.vertices.push(new THREE.Vector3(0, i, 0));
-    heightGridGeometry.vertices.push(new THREE.Vector3(0, i, maxDepth));
-  }
-
-  for (let i=-graphWidth/2; i < graphWidth/2; i+=20) {
-    bottomGridGeometry.vertices.push(new THREE.Vector3(i, -graphHeight/2, 0));
-    bottomGridGeometry.vertices.push(new THREE.Vector3(i, graphHeight/2, 0));
-
-    depthGridGeometry.vertices.push(new THREE.Vector3(i, 0, maxDepth));
-    depthGridGeometry.vertices.push(new THREE.Vector3(i, 0, 0));
-  }
-
-  for (let i=0;i<maxDepth;i+=20) {
-    heightGridGeometry.vertices.push(new THREE.Vector3(0, -graphHeight/2, i));
-    heightGridGeometry.vertices.push(new THREE.Vector3(0, graphHeight/2, i));
-
-    depthGridGeometry.vertices.push(new THREE.Vector3(-graphWidth/2, 0, i));
-    depthGridGeometry.vertices.push(new THREE.Vector3(graphWidth/2, 0, i));
-  }
-
-  const bottomGrid = new THREE.LineSegments(bottomGridGeometry, gridMaterial);
-  const heightGrid = new THREE.LineSegments(heightGridGeometry, gridMaterial);
-  const depthGrid = new THREE.LineSegments(depthGridGeometry, gridMaterial);
-  
-  const xAxis = new THREE.LineSegments(xAxisGeometry, axisMaterial);
-  const yAxis = new THREE.LineSegments(yAxisGeometry, axisMaterial);
-  const zAxis = new THREE.LineSegments(zAxisGeometry, axisMaterial);
-
-  heightGrid.translateX(-graphWidth/2);
-  depthGrid.translateY(graphHeight/2);
-
-  // Add grid lines
-  gridObject.add(xAxis);
-  gridObject.add(yAxis);
-  gridObject.add(zAxis);
-
-  gridObject.add(bottomGrid);
-  gridObject.add(heightGrid);
-  gridObject.add(depthGrid);
-
-  // ******** CREATE GRAPH GEOMETRY ********
-  // define scales
-  const graphMaterial = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide, vertexColors: THREE.VertexColors });
-  const allCounts = _.flatten(_.pluck(tornadoData, 'counts'))
-  const maxCount = _.max(allCounts);
-  const heightScale = d3Scale.scaleLinear()
-    .domain([0, maxCount])
-    .range([0, maxDepth - 10]) // add some padding
-
-  const colorScale = d3Scale.scaleLinear()
-    .domain([0, maxCount/2])
-    .range(['rgb(198, 219, 239)', 'rgb(49, 130, 189)'])
-
-  // create shape for 3D graph
-  const graphGeometry = new THREE.PlaneGeometry(graphWidth, graphHeight, xAxisCount-1, yAxisCount-1);
-  const faceColors = [];
-
-  _.each(graphGeometry.vertices, function(vertex, i) {
-    faceColors.push(colorScale(allCounts[i]));
-    vertex.z = heightScale(allCounts[i]);
-  })
-
-  _.each(graphGeometry.faces, function(face) {
-    face.vertexColors[0] = new THREE.Color(faceColors[face.a]);
-    face.vertexColors[1] = new THREE.Color(faceColors[face.b]);
-    face.vertexColors[2] = new THREE.Color(faceColors[face.c]);
-  });
-
-  // This is what we pass into the scene
-  const graphMesh = new THREE.Mesh(graphGeometry, graphMaterial);
-
   // ********* CREATE GRAPH LINES *********
-  _.each
+  // TODO
 
   // ********** THREEJS SETUP/RENDERING **********
   const scene = new THREE.Scene();
   window.camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 1, 4000);
-  controls = new OrbitControls(camera);
 
-  const renderer = new THREE.WebGLRenderer();
-  renderer.setClearColor(0xffffff, 1);
+  const gridObject = setupGrid(tornadoData, graphWidth, graphHeight, maxDepth);
+  //const graphMesh = setupGraph(tornadoData, graphWidth, graphHeight, maxDepth);
+  const graphMesh = setupGraphSimple(tornadoData, graphWidth, graphHeight, maxDepth);
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById('container') });
+  renderer.setClearColor('rgb(31, 36, 41)', 1);
   renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+  //document.body.appendChild(renderer.domElement);
 
   scene.add(graphMesh);
-  scene.add(gridObject);
+  //scene.add(gridObject);
 
   camera.position.z = graphHeight*2;
 
@@ -147,6 +43,8 @@ function draw(tornadoData) {
   };
 
   render();
+
+  controls = new OrbitControls(camera);
 }
 
 function parseData() {
