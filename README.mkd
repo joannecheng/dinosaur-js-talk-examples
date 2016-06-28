@@ -1,6 +1,9 @@
-# Dinosaur JS talk examples!
+# Dinosaur JS talk example: Earthquakes visualization with Three.js
 
 ![](https://internetactionforce.files.wordpress.com/2016/02/t-rex-ballet.gif)
+
+![](https://raw.githubusercontent.com/joannecheng/dinosaur-js-talk-examples/master/graph.gif)
+
 
 To start:
 

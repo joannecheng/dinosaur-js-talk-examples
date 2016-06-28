@@ -28,7 +28,7 @@ function draw(tornadoData) {
 
   const renderer = new THREE.WebGLRenderer({
     canvas: document.getElementById('container') });
-  renderer.setClearColor('rgb(31, 36, 41)', 1);
+  renderer.setClearColor(0xffffff, 1);
   renderer.setSize(window.innerWidth, window.innerHeight);
   //document.body.appendChild(renderer.domElement);
 
